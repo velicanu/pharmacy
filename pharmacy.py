@@ -1,9 +1,20 @@
 import os
 import math
+import csv
 
 def addline(linedata, drugdict):
-    cost = int(linedata[4])
+    print(linedata)
+    cost = float(linedata[4])
     pid  = int(linedata[0])
+    drug = linedata[3]
+    if(drug in drugdict.keys()):
+        # add perscriber to list of perscribers of this drug if not already there, then add cost to total cost
+        if(pid not in drugdict[drug]['perscribers'].keys()):
+            drugdict[drug]['perscribers'][pid] = pid
+        drugdict[drug]['total_cost'] += cost
+    else:
+        # add new drug to dictionary with first perscriber
+        drugdict[drug] = {'drug':drug,'perscribers':{pid:pid},'total_cost':cost}
 
 # ['1891717344', 'JAMES', 'HELEN', 'PROCHLORPERAZINE MALEATE', '387.41']
 
@@ -17,7 +28,7 @@ print("total size = "+str(size))
 print("splitting into",split,"groups")
 begin = []
 end = []
-drugs = {}
+drugs = {} # drug name, perscribers, total_cost
 # with open("bigfile.txt") as f:
 if(False):
     with open("xaa") as f:
@@ -48,12 +59,19 @@ if(True):
                 print(loc,"to",end[idx])
                 f.seek(loc)
                 data = f.read(end[idx]-loc)
+                # for line in csv.reader(data):
+                    # print(line)
                 for line in data.splitlines():
+                    # print(line)
+                    # csv.reader(line, skipinitialspace=True).__next__()
+                    # csv.reader(line, quoting=csv.QUOTE_ALL, skipinitialspace=True).__next__()
+                    # print( csv.reader(line, quotechar='"', delimiter=',',quoting=csv.QUOTE_ALL, skipinitialspace=True).__next__())
+                        # print(linedata)
+                    print(line.findall('"[^"]*"|[^,]+'))
+                    break
                     linedata = line.split(',')
                     if(linedata[0].isdigit()): # skip title lines
-                        addline(linedata)
-                        print(linedata)
-                    break
+                        addline(linedata, drugs)
 
                 # ['1891717344', 'JAMES', 'HELEN', 'PROCHLORPERAZINE MALEATE', '387.41']
-                
+print(drugs)                
