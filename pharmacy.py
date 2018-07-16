@@ -1,9 +1,11 @@
+from collections import OrderedDict
+from operator import itemgetter
 import os
 import math
 import csv
+from io import StringIO
 
 def addline(linedata, drugdict):
-    print(linedata)
     cost = float(linedata[4])
     pid  = int(linedata[0])
     drug = linedata[3]
@@ -62,16 +64,36 @@ if(True):
                 # for line in csv.reader(data):
                     # print(line)
                 for line in data.splitlines():
-                    # print(line)
-                    # csv.reader(line, skipinitialspace=True).__next__()
-                    # csv.reader(line, quoting=csv.QUOTE_ALL, skipinitialspace=True).__next__()
-                    # print( csv.reader(line, quotechar='"', delimiter=',',quoting=csv.QUOTE_ALL, skipinitialspace=True).__next__())
-                        # print(linedata)
-                    print(line.findall('"[^"]*"|[^,]+'))
-                    break
-                    linedata = line.split(',')
+                    linedata = csv.reader(StringIO(line)).__next__()
+                    # linedata = line.split(',')
                     if(linedata[0].isdigit()): # skip title lines
                         addline(linedata, drugs)
+                    # if "5,000" in line:
+                        # print(line)
+                        # print(linedata)
+                        # print(drugs[linedata[3]])
+                        # break
 
                 # ['1891717344', 'JAMES', 'HELEN', 'PROCHLORPERAZINE MALEATE', '387.41']
-print(drugs)                
+# print(drugs)
+print(type(drugs.get))
+# print(drugs['ALPRAZOLAM'])
+# print(type(drugs))
+# s = [(k, drugs[k]) for k in sorted(drugs, key=drugs.get['total_cost'], reverse=True)]
+# print(type(s))
+sdrugs = sorted(drugs.values(), key=lambda k: k.get('total_cost'), reverse=True)
+print(type(sdrugs))
+outf = open('top_cost_drug.txt','w')
+for drug in sdrugs:
+    outf.write(str(drug['drug'])+","+str(len(drug['perscribers']))+","+"{0:.2f}".format(round(drug['total_cost'],2))+"\n")
+    # break
+# print(sdrugs[0])
+# print(sdrugs[1])
+# sdrugs = OrderedDict(sorted(drugs.items(), key = itemgetter('total_cost'), reverse = True))
+# flag = True
+# for k,v in sdrugs:
+    # print(k,v)
+    # if(flag):
+        # flag = False
+    # else:
+        # break
