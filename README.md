@@ -15,3 +15,10 @@ CDRUG,3,1000
 For the total cost of drugs I am dropping the last zero of the output in order to pass the first test and because that seems to be the format the data is provided in.
 
 I would be happy to discuss my decisions or code further. 
+
+## To manually run
+
+```bash
+./run.sh
+```
+Will run the program on all files in the ```./input/``` directory and put the ```top_cost_drug.txt``` file in the ```./output``` directory.
