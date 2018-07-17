@@ -1,6 +1,6 @@
 from collections import OrderedDict
 from operator import itemgetter
-import os
+import sys, os
 import math
 import csv
 from io import StringIO
@@ -20,80 +20,66 @@ def addline(linedata, drugdict):
 
 # ['1891717344', 'JAMES', 'HELEN', 'PROCHLORPERAZINE MALEATE', '387.41']
 
-# statinfo = os.stat("bigfile.txt")
+infilename = sys.argv[1]
+outfilename = sys.argv[2]
+outf = open(outfilename,'w')
+
 chunksize = 2**25 # about 25MB
-statinfo = os.stat("xaa")
+statinfo = os.stat(infilename)
 size = statinfo.st_size
 split = math.ceil(size/chunksize)
 step = int(size/split)
-print("total size = "+str(size))
-print("splitting into",split,"groups")
+# print("total size = "+str(size))
+# print("splitting into",split,"groups")
 begin = []
 end = []
 drugs = {} # drug name, perscribers, total_cost
 # with open("bigfile.txt") as f:
-if(False):
-    with open("xaa") as f:
-        for line in f:
-            pass
 if(True):
-    # with open("xaa") as f:
-    with open("xaa") as f:
+    with open(infilename) as f:
         for i in range(split):
-            # print(i)
             f.seek(step*i)
+            # f.__next__()
+            # f.readline()
+            # print(f.readline())
+            here = step*i+len(f.readline())
+            there = here + len(f.readline())
+            # print("seek to "+str(here))
+            f.seek(here)
             f.readline()
-            here = f.tell()
+            # print(f.readline())
+            f.seek(here)
+            # print(f.read(there-here))
             if(i==0):
                 begin.append(0)
             else:
                 begin.append(here)
                 end.append(here)
-            f.seek(here)
-            print("seek to "+str(here))
-            print(f.readline())
+            # print(f.readline())
+            # print(f.readline())
+            
         end.append(size)
-        print(begin)
-        print(end)
-
+        # print(begin)
+        # print(end)
+        ind = int(sys.argv[3])
+        f.seek(begin[ind])
+        stuff = f.read(end[ind]-begin[ind])
+        outf.write(stuff)
+        sys.exit(1)
         if(True):
             for idx,loc in enumerate(begin):
                 print(loc,"to",end[idx])
                 f.seek(loc)
                 data = f.read(end[idx]-loc)
-                # for line in csv.reader(data):
-                    # print(line)
+                print(data[-100:])
                 for line in data.splitlines():
                     linedata = csv.reader(StringIO(line)).__next__()
-                    # linedata = line.split(',')
                     if(linedata[0].isdigit()): # skip title lines
                         addline(linedata, drugs)
-                    # if "5,000" in line:
-                        # print(line)
-                        # print(linedata)
-                        # print(drugs[linedata[3]])
-                        # break
 
-                # ['1891717344', 'JAMES', 'HELEN', 'PROCHLORPERAZINE MALEATE', '387.41']
-# print(drugs)
 print(type(drugs.get))
-# print(drugs['ALPRAZOLAM'])
-# print(type(drugs))
-# s = [(k, drugs[k]) for k in sorted(drugs, key=drugs.get['total_cost'], reverse=True)]
-# print(type(s))
 sdrugs = sorted(drugs.values(), key=lambda k: k.get('total_cost'), reverse=True)
 print(type(sdrugs))
-outf = open('top_cost_drug.txt','w')
+outf.write("drug_name,num_prescriber,total_cost\n")
 for drug in sdrugs:
     outf.write(str(drug['drug'])+","+str(len(drug['perscribers']))+","+"{0:.2f}".format(round(drug['total_cost'],2))+"\n")
-    # break
-# print(sdrugs[0])
-# print(sdrugs[1])
-# sdrugs = OrderedDict(sorted(drugs.items(), key = itemgetter('total_cost'), reverse = True))
-# flag = True
-# for k,v in sdrugs:
-    # print(k,v)
-    # if(flag):
-        # flag = False
-    # else:
-        # break
