@@ -4,25 +4,40 @@ import sys, os
 import math
 import csv
 from io import StringIO
+import threading
 
 def addline(linedata, drugdict):
     cost = float(linedata[4])
     pid  = int(linedata[0])
     drug = linedata[3]
-    if(drug in drugdict.keys()):
-        # add perscriber to list of perscribers of this drug if not already there, then add cost to total cost
-        if(pid not in drugdict[drug]['perscribers'].keys()):
-            drugdict[drug]['perscribers'][pid] = pid
-        drugdict[drug]['total_cost'] += cost
-    else:
-        # add new drug to dictionary with first perscriber
-        drugdict[drug] = {'drug':drug,'perscribers':{pid:pid},'total_cost':cost}
+    with drug_lock:
+        if(drug in drugdict):
+            # add perscriber to list of perscribers of this drug if not already there, then add cost to total cost
+            if(pid not in drugdict[drug]['perscribers']):
+                drugdict[drug]['perscribers'][pid] = pid
+                drugdict[drug]['total_cost'] += cost
+        else:
+            # add new drug to dictionary with first perscriber
+            drugdict[drug] = {'drug':drug,'perscribers':{pid:pid},'total_cost':cost}
 
+def process_chunk(idx,loc,end,f):
+    print("processing chunk",idx,"of",(len(end)-1))
+    with file_lock:
+        f.seek(loc)
+        data = f.read(end[idx]-loc)
+        for line in data.splitlines():
+            linedata = csv.reader(StringIO(line)).__next__()
+            if(linedata[0].isdigit()): # skip title lines
+                addline(linedata, drugs)
+                
 # ['1891717344', 'JAMES', 'HELEN', 'PROCHLORPERAZINE MALEATE', '387.41']
+
+drug_lock = threading.Lock()
+file_lock = threading.Lock()
 
 infilename = sys.argv[1]
 outfilename = sys.argv[2]
-outf = open(outfilename,'w')
+outf = open(outfilename,'w', encoding="cp437")
 
 chunksize = 2**25 # about 25MB
 statinfo = os.stat(infilename)
@@ -34,52 +49,36 @@ step = int(size/split)
 begin = []
 end = []
 drugs = {} # drug name, perscribers, total_cost
-# with open("bigfile.txt") as f:
-if(True):
-    with open(infilename) as f:
-        for i in range(split):
-            f.seek(step*i)
-            # f.__next__()
-            # f.readline()
-            # print(f.readline())
-            here = step*i+len(f.readline())
-            there = here + len(f.readline())
-            # print("seek to "+str(here))
-            f.seek(here)
-            f.readline()
-            # print(f.readline())
-            f.seek(here)
-            # print(f.read(there-here))
-            if(i==0):
-                begin.append(0)
-            else:
-                begin.append(here)
-                end.append(here)
-            # print(f.readline())
-            # print(f.readline())
-            
-        end.append(size)
-        # print(begin)
-        # print(end)
-        ind = int(sys.argv[3])
-        f.seek(begin[ind])
-        stuff = f.read(end[ind]-begin[ind])
-        outf.write(stuff)
-        sys.exit(1)
-        if(True):
-            for idx,loc in enumerate(begin):
-                print(loc,"to",end[idx])
-                f.seek(loc)
-                data = f.read(end[idx]-loc)
-                print(data[-100:])
-                for line in data.splitlines():
-                    linedata = csv.reader(StringIO(line)).__next__()
-                    if(linedata[0].isdigit()): # skip title lines
-                        addline(linedata, drugs)
+mythreads = []
+running_threads = []
 
-print(type(drugs.get))
+# with open("bigfile.txt") as f:
+with open(infilename, encoding="cp437") as f:
+
+    for i in range(split):
+        f.seek(step*i)
+        here = step*i+len(f.readline())
+        if(i==0):
+            begin.append(0)
+        else:
+            begin.append(here)
+            end.append(here)            
+    end.append(size)
+
+    for idx,loc in enumerate(begin):
+        mythreads.append(threading.Thread(name=str("thread"+str(idx)), target=process_chunk, kwargs={'idx':idx,'loc':loc,'end':end,'f':f}))
+    running_threads = mythreads.copy()
+    while(mythreads):
+        if(threading.active_count() < 5):
+            runthread = mythreads.pop(0)
+            runthread.start()
+            running_threads.append(runthread)
+
+    for thread in running_threads:
+        thread.join()
+        
 sdrugs = sorted(drugs.values(), key=lambda k: k.get('total_cost'), reverse=True)
-print(type(sdrugs))
 outf.write("drug_name,num_prescriber,total_cost\n")
 for drug in sdrugs:
-    outf.write(str(drug['drug'])+","+str(len(drug['perscribers']))+","+"{0:.2f}".format(round(drug['total_cost'],2))+"\n")
+    price = "{0:.2f}".format(round(drug['total_cost'],2)).rstrip('0').rstrip('.')
+    outf.write(str(drug['drug'])+","+str(len(drug['perscribers']))+","+price+"\n")

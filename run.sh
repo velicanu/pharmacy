@@ -1,6 +1,15 @@
 #!/bin/bash
-#
-# Use this shell script to compile (if necessary) your code and then execute it. Below is an example of what might be found in this file if your program was written in Python
-#
-#python ./src/pharmacy_counting.py ./input/itcont.txt ./output/top_cost_drug.txt
-python3 ./src/pharmacy.py ./input/itcont.txt ./output/top_cost_drug.txt
+
+# split the files into 50M chunks
+mkdir -p tmp_folder_for_files
+for file in `ls ./input/ | grep -v README.md`
+do
+    split -C50M ./input/$file tmp_folder_for_files/${file}_
+done
+
+# do the python
+python3 ./src/root.py
+# clean up
+rm -rf tmp_folder_for_files
+echo Done
+
