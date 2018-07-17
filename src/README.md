@@ -17,5 +17,5 @@ def write_output
 ```
  - This sorts the drugs by total cost and writes the output to the top_cost_drug file, matching the formatting given in the sample output file. 
  
-## root.py - provides the necessary functions to solve subparts of the problem.
+## root.py - handles the control flow 
 This is the main class which gets the drugs from each input file in parallel and merges and writes the result using the functions in basic. 
